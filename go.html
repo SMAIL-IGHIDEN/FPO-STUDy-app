@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIZ Student Nexus | The Archive</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Rajdhani', sans-serif;
+            color: #e0e0e0;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* 3D Canvas Layer */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: all; /* Allow orbit controls if needed */
+        }
+
+        /* UI Layer */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Let clicks pass through empty spaces */
+            overflow-y: auto;
+        }
+
+        .interactive-panel {
+            pointer-events: auto;
+        }
+
+        /* Glassmorphism & Neon Effects */
+        .glass-panel {
+            background: rgba(10, 10, 16, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 243, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(0, 243, 255, 0.5);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1);
+            transform: translateY(-5px) scale(1.01);
+        }
+
+        .neon-text-cyan {
+            color: #00f3ff;
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.7), 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        .neon-text-purple {
+            color: #bc13fe;
+            text-shadow: 0 0 5px rgba(188, 19, 254, 0.7), 0 0 10px rgba(188, 19, 254, 0.5);
+        }
+
+        .neon-text-red {
+            color: #ff003c;
+            text-shadow: 0 0 5px rgba(255, 0, 60, 0.7), 0 0 10px rgba(255, 0, 60, 0.5);
+        }
+
+        .input-cyber {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #333;
+            color: #fff;
+            transition: 0.3s;
+        }
+        .input-cyber:focus {
+            outline: none;
+            border-color: #00f3ff;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        }
+
+        .btn-cyber {
+            background: linear-gradient(45deg, rgba(0, 243, 255, 0.1), rgba(188, 19, 254, 0.1));
+            border: 1px solid rgba(0, 243, 255, 0.5);
+            color: #00f3ff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+        
+        .btn-cyber::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-cyber:hover::before {
+            left: 100%;
+        }
+
+        .btn-cyber:hover {
+            background: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        /* Page Transitions */
+        .page-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .page-section.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f3ff; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Background -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer" class="flex flex-col items-center justify-center min-h-screen p-4">
+        
+        <!-- HEADER -->
+        <header class="fixed top-0 w-full p-4 z-50 flex justify-between items-center pointer-events-none">
+            <div class="interactive-panel flex items-center gap-2 animate-pulse">
+                <i class="fas fa-atom text-2xl text-cyan-400"></i>
+                <span class="text-2xl brand-font neon-text-cyan tracking-widest">NEXUS</span>
+            </div>
+            <div id="user-status-display" class="hidden interactive-panel glass-panel px-4 py-2 rounded-full text-xs neon-text-purple">
+                <!-- Populated by JS -->
+            </div>
+        </header>
+
+        <!-- PAGE 1: LOGIN -->
+        <section id="page-login" class="page-section active flex-col w-full max-w-md interactive-panel">
+            <div class="glass-panel p-8 rounded-xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent"></div>
+                
+                <h2 class="text-3xl text-center mb-6 neon-text-cyan">Identity Verification</h2>
+                
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">Full Name</label>
+                        <input type="text" id="inp-name" required class="input-cyber w-full p-3 rounded bg-transparent" placeholder="e.g. Sarah Connor">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">University Email</label>
+                        <input type="email" id="inp-email" required class="input-cyber w-full p-3 rounded bg-transparent" placeholder="student@educ.uiz.ac.ma">
+                        <p id="email-error" class="text-red-500 text-xs mt-1 hidden"><i class="fas fa-exclamation-triangle"></i> Must end with @educ.uiz.ac.ma</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">Year</label>
+                            <select id="inp-year" class="input-cyber w-full p-3 rounded bg-black">
+                                <option value="S1">S1</option>
+                                <option value="S2">S2</option>
+                                <option value="S3">S3</option>
+                                <option value="S4">S4</option>
+                                <option value="S5">S5</option>
+                                <option value="S6">S6</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">Branch</label>
+                            <input type="text" id="inp-branch" required class="input-cyber w-full p-3 rounded bg-transparent" placeholder="CS, Bio, Phy...">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-cyber w-full py-3 mt-4 font-bold rounded">
+                        Initialize Session
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- PAGE 2: DASHBOARD -->
+        <section id="page-dashboard" class="page-section flex-col w-full max-w-4xl interactive-panel hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+                
+                <!-- Main Status Panel -->
+                <div class="glass-panel p-6 rounded-xl md:col-span-2 flex flex-col justify-between min-h-[300px]">
+                    <div>
+                        <h2 class="text-4xl neon-text-cyan mb-2" id="dash-greeting">Welcome</h2>
+                        <p class="text-gray-400 text-sm">Library Neural Network Connected</p>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center my-8">
+                        <div id="status-indicator" class="w-32 h-32 rounded-full border-4 border-gray-700 flex items-center justify-center relative cursor-pointer transition-all duration-500 hover:scale-105 group">
+                            <div class="absolute inset-0 rounded-full bg-cyan-500 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-20"></div>
+                            <i id="status-icon" class="fas fa-power-off text-4xl text-gray-600 transition-colors duration-300"></i>
+                        </div>
+                        <p class="mt-4 text-xl tracking-widest font-bold" id="status-text">OFF GRID</p>
+                        <button id="btn-toggle-status" class="mt-2 text-xs text-cyan-400 hover:text-white underline">Toggle Presence</button>
+                    </div>
+
+                    <div class="flex justify-between items-end">
+                        <div>
+                            <span class="text-xs text-gray-500 uppercase">Current Sector</span>
+                            <div class="text-lg text-white">Main Hall</div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-gray-500 uppercase">Network Latency</span>
+                            <div class="text-green-400 font-mono text-sm">12ms</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Panel -->
+                <div class="glass-panel p-6 rounded-xl flex flex-col justify-center space-y-6">
+                    <div class="text-center group">
+                        <div class="text-5xl font-bold neon-text-purple mb-1 group-hover:scale-110 transition-transform" id="active-count">0</div>
+                        <div class="text-xs uppercase tracking-widest text-gray-400">Students Online</div>
+                    </div>
+                    
+                    <div class="h-px bg-gray-800 w-full"></div>
+
+                    <div class="text-center group">
+                        <div class="text-5xl font-bold neon-text-red mb-1 group-hover:scale-110 transition-transform" id="library-count">0</div>
+                        <div class="text-xs uppercase tracking-widest text-gray-400">In Library</div>
+                    </div>
+                </div>
+
+                <!-- Navigation Deck -->
+                <div class="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <button onclick="app.nav('list')" class="glass-panel p-4 rounded-lg flex items-center justify-center gap-3 hover:bg-cyan-900/20 group">
+                        <i class="fas fa-users text-2xl text-cyan-400 group-hover:rotate-12 transition-transform"></i>
+                        <span class="font-bold">STUDENT MANIFEST</span>
+                    </button>
+                    
+                    <button onclick="app.nav('tour')" class="glass-panel p-4 rounded-lg flex items-center justify-center gap-3 hover:bg-purple-900/20 group">
+                        <i class="fas fa-vr-cardboard text-2xl text-purple-400 group-hover:animate-pulse"></i>
+                        <span class="font-bold">VIRTUAL TOUR</span>
+                    </button>
+                    
+                    <button onclick="app.logout()" class="glass-panel p-4 rounded-lg flex items-center justify-center gap-3 hover:bg-red-900/20 group">
+                        <i class="fas fa-sign-out-alt text-2xl text-red-500"></i>
+                        <span class="font-bold">DISCONNECT</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: STUDENTS LIST -->
+        <section id="page-list" class="page-section flex-col w-full max-w-5xl interactive-panel hidden">
+            <div class="flex justify-between items-center w-full mb-6">
+                <h2 class="text-3xl neon-text-cyan">Active Library Units</h2>
+                <button onclick="app.nav('dashboard')" class="btn-cyber px-4 py-2 rounded text-sm">Back to Hub</button>
+            </div>
+
+            <div id="student-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pb-10">
+                <!-- Dynamic Content Here -->
+                <div class="glass-panel p-6 rounded-lg animate-pulse">
+                    <div class="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                    <div class="h-3 bg-gray-800 rounded w-1/2"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 4: LIBRARY TOUR -->
+        <section id="page-tour" class="page-section flex-col w-full h-screen interactive-panel hidden justify-end pb-12">
+            <!-- 3D Scene Controls Overlay -->
+            <div class="absolute top-20 right-4 w-64 glass-panel p-4 rounded-lg">
+                <h3 class="neon-text-purple mb-2">Navigation Systems</h3>
+                <p class="text-xs text-gray-400 mb-4">Click artifacts to analyze data streams. Mouse moves camera.</p>
+                <div class="space-y-2">
+                    <button class="w-full text-left text-sm hover:text-cyan-400 transition" onmouseenter="tourHighlight(1)">> Quiet Zone</button>
+                    <button class="w-full text-left text-sm hover:text-cyan-400 transition" onmouseenter="tourHighlight(2)">> Group Pods</button>
+                    <button class="w-full text-left text-sm hover:text-cyan-400 transition" onmouseenter="tourHighlight(3)">> Digital Archives</button>
+                </div>
+            </div>
+
+            <div class="text-center mb-8 pointer-events-auto">
+                <button onclick="app.nav('dashboard')" class="btn-cyber px-8 py-3 rounded text-lg font-bold shadow-lg bg-black/50">
+                    EXIT SIMULATION
+                </button>
+            </div>
+            
+            <!-- Interactive Markers (CSS positioned based on logic, or just absolute for this demo) -->
+            <div id="tour-markers"></div>
+        </section>
+
+    </div>
+
+    <!-- MAIN LOGIC -->
+    <script>
+        // --- FIREBASE SETUP ---
+        const firebaseConfig = JSON.parse(new URLSearchParams(window.location.search).get('firebaseConfig') || '{}');
+        // Using global variable provided by environment
+        const fConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+        
+        let db, auth, currentUser;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
+
+        try {
+            firebase.initializeApp(fConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+        } catch (e) {
+            console.error("Firebase init error. Ensure environment variables are set.", e);
+        }
+
+        // --- THREE.JS ENGINE ---
+        const engine = {
+            scene: null, camera: null, renderer: null,
+            particles: null, cubes: [], 
+            mouse: new THREE.Vector2(), target: new THREE.Vector2(),
+            mode: 'static', // static, fly
+            clock: new THREE.Clock(),
+            
+            init: function() {
+                const container = document.getElementById('canvas-container');
+                
+                // Scene Setup
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x050505, 0.0025);
+
+                // Camera
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.z = 5;
+
+                // Renderer
+                this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                container.appendChild(this.renderer.domElement);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0x404040, 2);
+                this.scene.add(ambientLight);
+                
+                const pointLight1 = new THREE.PointLight(0x00f3ff, 2, 50);
+                pointLight1.position.set(5, 5, 5);
+                this.scene.add(pointLight1);
+                
+                const pointLight2 = new THREE.PointLight(0xbc13fe, 2, 50);
+                pointLight2.position.set(-5, -5, 5);
+                this.scene.add(pointLight2);
+
+                // Objects: "Books/Data Cubes"
+                const geometry = new THREE.BoxGeometry(0.5, 2, 1.5);
+                // Cyber material
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: 0x111111, 
+                    emissive: 0x001122,
+                    specular: 0x00f3ff,
+                    shininess: 100,
+                    transparent: true,
+                    opacity: 0.9
+                });
+
+                // Create a "Library" structure (Aisle)
+                for(let i=0; i<60; i++) {
+                    const cube = new THREE.Mesh(geometry, material);
+                    
+                    // Left shelves
+                    if (i % 2 === 0) {
+                        cube.position.x = -4 - (Math.random() * 2);
+                    } else {
+                        // Right shelves
+                        cube.position.x = 4 + (Math.random() * 2);
+                    }
+                    
+                    cube.position.z = - (i * 1.5) + 10; // Deep into screen
+                    cube.position.y = (Math.random() * 6) - 3;
+                    
+                    // Random scale variance
+                    cube.scale.z = Math.random() * 0.5 + 0.5;
+
+                    this.cubes.push(cube);
+                    this.scene.add(cube);
+                }
+
+                // Particles (Dust/Data Motes)
+                const partGeo = new THREE.BufferGeometry();
+                const partCount = 1000;
+                const posArray = new Float32Array(partCount * 3);
+                for(let i=0; i<partCount * 3; i++) {
+                    posArray[i] = (Math.random() - 0.5) * 50;
+                }
+                partGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                const partMat = new THREE.PointsMaterial({
+                    size: 0.05,
+                    color: 0x00f3ff,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.AdditiveBlending
+                });
+                this.particles = new THREE.Points(partGeo, partMat);
+                this.scene.add(this.particles);
+
+                // Listeners
+                window.addEventListener('resize', () => this.onWindowResize(), false);
+                document.addEventListener('mousemove', (e) => this.onMouseMove(e), false);
+
+                this.animate();
+            },
+
+            onWindowResize: function() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            },
+
+            onMouseMove: function(event) {
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            },
+
+            setMode: function(modeName) {
+                this.mode = modeName;
+                if(modeName === 'tour') {
+                    // Reset camera for fly-through
+                    this.camera.position.set(0, 0, 10);
+                } else if (modeName === 'static') {
+                    this.camera.position.set(0, 0, 5);
+                }
+            },
+
+            animate: function() {
+                requestAnimationFrame(() => this.animate());
+                
+                const time = this.clock.getElapsedTime();
+
+                // Particle Drift
+                this.particles.rotation.y = time * 0.05;
+                this.particles.rotation.x = time * 0.02;
+
+                if (this.mode === 'static') {
+                    // Slight parallax based on mouse
+                    this.target.x = this.mouse.x * 0.5;
+                    this.target.y = this.mouse.y * 0.5;
+                    this.camera.rotation.x += 0.05 * (this.target.y - this.camera.rotation.x);
+                    this.camera.rotation.y += 0.05 * (this.target.x - this.camera.rotation.y);
+                    
+                    // Gentle float of cubes
+                    this.cubes.forEach((cube, i) => {
+                        cube.position.y += Math.sin(time + i) * 0.002;
+                    });
+
+                } else if (this.mode === 'tour') {
+                    // Fly through effect
+                    this.camera.position.z -= 0.1; // Move forward
+                    
+                    // Mouse steers slightly
+                    this.camera.position.x += (this.mouse.x - this.camera.position.x) * 0.05;
+                    this.camera.position.y += (this.mouse.y - this.camera.position.y) * 0.05;
+
+                    // Loop items back to create infinite corridor
+                    this.cubes.forEach(cube => {
+                        if(cube.position.z > this.camera.position.z + 5) {
+                            cube.position.z -= 90; // Send to back
+                        }
+                    });
+                    
+                    // Reset if too far
+                    if(this.camera.position.z < -100) {
+                        this.camera.position.z = 10;
+                        this.cubes.forEach((c, i) => c.position.z = -(i * 1.5) + 10);
+                    }
+                }
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        };
+
+        // --- APP LOGIC ---
+        const app = {
+            userData: null,
+            
+            init: async function() {
+                engine.init();
+                
+                // Auth Check
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await auth.signInWithCustomToken(__initial_auth_token);
+                } else {
+                    await auth.signInAnonymously();
+                }
+
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        currentUser = user;
+                        // Check if profile exists, else show login
+                        this.checkProfile();
+                    }
+                });
+
+                // Form Handler
+                document.getElementById('login-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleLogin();
+                });
+
+                // Status Toggle
+                document.getElementById('btn-toggle-status').addEventListener('click', () => {
+                    this.toggleStatus();
+                });
+            },
+
+            checkProfile: async function() {
+                if(!currentUser) return;
+                
+                // Strict path rule
+                const docRef = db.doc(`artifacts/${appId}/public/data/students/${currentUser.uid}`);
+                const docSnap = await docRef.get();
+
+                if (docSnap.exists) {
+                    this.userData = docSnap.data();
+                    this.updateUIHeader();
+                    this.nav('dashboard');
+                    this.listenToStats();
+                } else {
+                    this.nav('login');
+                }
+            },
+
+            handleLogin: async function() {
+                const email = document.getElementById('inp-email').value;
+                const name = document.getElementById('inp-name').value;
+                const branch = document.getElementById('inp-branch').value;
+                const year = document.getElementById('inp-year').value;
+
+                // Validation
+                if (!email.endsWith('@educ.uiz.ac.ma')) {
+                    document.getElementById('email-error').classList.remove('hidden');
+                    return;
+                }
+
+                const data = {
+                    uid: currentUser.uid,
+                    name: name,
+                    email: email,
+                    branch: branch,
+                    year: year,
+                    inLibrary: false,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Save to Firestore (Strict Path Rule)
+                await db.doc(`artifacts/${appId}/public/data/students/${currentUser.uid}`).set(data);
+                this.userData = data;
+                this.nav('dashboard');
+                this.listenToStats();
+            },
+
+            toggleStatus: async function() {
+                if(!this.userData) return;
+                
+                const newStatus = !this.userData.inLibrary;
+                
+                // Optimistic UI update
+                this.renderStatus(newStatus);
+
+                await db.doc(`artifacts/${appId}/public/data/students/${currentUser.uid}`).update({
+                    inLibrary: newStatus,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                this.userData.inLibrary = newStatus;
+            },
+
+            renderStatus: function(isOnline) {
+                const indicator = document.getElementById('status-indicator');
+                const icon = document.getElementById('status-icon');
+                const text = document.getElementById('status-text');
+
+                if (isOnline) {
+                    indicator.classList.remove('border-gray-700');
+                    indicator.classList.add('border-cyan-400', 'shadow-[0_0_30px_#00f3ff]');
+                    icon.classList.remove('text-gray-600', 'fa-power-off');
+                    icon.classList.add('text-cyan-400', 'fa-wifi');
+                    text.innerText = "CONNECTED";
+                    text.classList.add('neon-text-cyan');
+                } else {
+                    indicator.classList.add('border-gray-700');
+                    indicator.classList.remove('border-cyan-400', 'shadow-[0_0_30px_#00f3ff]');
+                    icon.classList.add('text-gray-600', 'fa-power-off');
+                    icon.classList.remove('text-cyan-400', 'fa-wifi');
+                    text.innerText = "OFF GRID";
+                    text.classList.remove('neon-text-cyan');
+                }
+            },
+
+            listenToStats: function() {
+                // Rule: No complex queries. Fetch all students, filter in memory.
+                db.collection(`artifacts/${appId}/public/data/students`)
+                    .onSnapshot((snapshot) => {
+                        let total = 0;
+                        let inLib = 0;
+                        const libraryStudents = [];
+
+                        snapshot.forEach(doc => {
+                            const d = doc.data();
+                            total++;
+                            if (d.inLibrary) {
+                                inLib++;
+                                libraryStudents.push(d);
+                            }
+                        });
+
+                        // Update Dashboard Stats
+                        document.getElementById('active-count').innerText = total;
+                        document.getElementById('library-count').innerText = inLib;
+
+                        // Update List Page
+                        this.renderStudentList(libraryStudents);
+                    }, (error) => {
+                        console.error("Stats listener error:", error);
+                    });
+            },
+
+            renderStudentList: function(list) {
+                const grid = document.getElementById('student-grid');
+                grid.innerHTML = '';
+
+                if(list.length === 0) {
+                    grid.innerHTML = `<div class="col-span-3 text-center text-gray-500 py-10">THE ARCHIVES ARE SILENT (No students checked in)</div>`;
+                    return;
+                }
+
+                list.forEach(student => {
+                    const card = document.createElement('div');
+                    card.className = 'glass-panel p-6 rounded-lg relative overflow-hidden group';
+                    card.innerHTML = `
+                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-gradient-to-br from-cyan-500 to-transparent opacity-20 rounded-full blur-xl group-hover:opacity-40 transition"></div>
+                        <h3 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-300 transition">${student.name}</h3>
+                        <p class="text-sm text-cyan-500 mb-4">${student.email}</p>
+                        <div class="flex justify-between items-center text-xs text-gray-400 uppercase tracking-widest">
+                            <span>${student.branch}</span>
+                            <span class="border border-purple-500 text-purple-400 px-2 py-1 rounded">${student.year}</span>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            },
+
+            nav: function(pageId) {
+                // Hide all sections
+                document.querySelectorAll('.page-section').forEach(el => {
+                    el.classList.remove('active');
+                    el.classList.add('hidden');
+                    setTimeout(() => {
+                        if(!el.classList.contains('active')) el.style.display = 'none';
+                    }, 500); 
+                });
+
+                // Show target
+                const target = document.getElementById(`page-${pageId}`);
+                target.classList.remove('hidden');
+                target.style.display = pageId === 'dashboard' ? 'grid' : 'flex'; // Grid for dash, flex for others
+                
+                // Small timeout for fade in
+                setTimeout(() => {
+                    target.classList.add('active');
+                }, 10);
+
+                // Adjust Engine Mode
+                if (pageId === 'tour') {
+                    engine.setMode('tour');
+                } else {
+                    engine.setMode('static');
+                }
+
+                if(pageId === 'dashboard' && this.userData) {
+                    document.getElementById('dash-greeting').innerText = `Welcome, ${this.userData.name.split(' ')[0]}`;
+                    this.renderStatus(this.userData.inLibrary);
+                }
+            },
+
+            updateUIHeader: function() {
+                if(this.userData) {
+                    const statusDiv = document.getElementById('user-status-display');
+                    statusDiv.classList.remove('hidden');
+                    statusDiv.innerHTML = `<i class="fas fa-id-card mr-2"></i> ${this.userData.name} [${this.userData.year}]`;
+                }
+            },
+
+            logout: function() {
+                auth.signOut().then(() => {
+                    window.location.reload();
+                });
+            }
+        };
+
+        // Helper for tour interactions
+        window.tourHighlight = function(index) {
+            // In a real app, this would tween camera to specific coordinates
+            // For now, we just flash lights
+            const color = index === 1 ? 0x00f3ff : index === 2 ? 0xbc13fe : 0xff003c;
+            if(engine.scene) {
+                engine.scene.children.filter(c => c.isPointLight).forEach(l => l.color.setHex(color));
+            }
+        };
+
+        // Start
+        window.onload = function() {
+            app.init();
+        };
+
+    </script>
+</body>
+</html>

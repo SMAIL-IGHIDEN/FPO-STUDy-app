@@ -1,0 +1,1940 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Cupboard System - 3D University Platform</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      overflow-x: hidden;
+      min-height: 100%;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    /* 3D Floating Background Elements */
+    .bg-shapes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .shape {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      animation: float 20s infinite ease-in-out;
+      box-shadow: 
+        0 20px 60px rgba(102, 126, 234, 0.3),
+        inset 0 -5px 20px rgba(255, 255, 255, 0.2);
+    }
+
+    .shape:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      top: 10%;
+      left: 10%;
+      animation-delay: 0s;
+    }
+
+    .shape:nth-child(2) {
+      width: 150px;
+      height: 150px;
+      top: 60%;
+      right: 15%;
+      animation-delay: -5s;
+      border-radius: 20px;
+    }
+
+    .shape:nth-child(3) {
+      width: 100px;
+      height: 100px;
+      bottom: 20%;
+      left: 20%;
+      animation-delay: -10s;
+    }
+
+    .shape:nth-child(4) {
+      width: 180px;
+      height: 180px;
+      top: 40%;
+      right: 30%;
+      animation-delay: -15s;
+      border-radius: 30px;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotateZ(0deg); }
+      25% { transform: translateY(-30px) rotateZ(5deg); }
+      50% { transform: translateY(0) rotateZ(0deg); }
+      75% { transform: translateY(30px) rotateZ(-5deg); }
+    }
+
+    /* Glassmorphism Navigation */
+    nav {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50px;
+      padding: 15px 30px;
+      display: flex;
+      gap: 30px;
+      z-index: 1000;
+      box-shadow: 
+        0 15px 40px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      animation: slideDown 0.8s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 8px 16px;
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    nav a:hover, nav a.active {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Container */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Homepage Hero */
+    .hero {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 140px 20px 80px;
+      position: relative;
+    }
+
+    .hero h1 {
+      font-size: 72px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      animation: fadeInUp 1s ease-out;
+      letter-spacing: -2px;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 50px;
+      max-width: 600px;
+      animation: fadeInUp 1s ease-out 0.2s backwards;
+      text-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeInUp 1s ease-out 0.4s backwards;
+    }
+
+    .btn-3d {
+      padding: 18px 40px;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.2),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-3d:before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn-3d:hover:before {
+      left: 100%;
+    }
+
+    .btn-3d:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.3),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-3d:active {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.95);
+      color: #667eea;
+    }
+
+    /* Dashboard Layout */
+    .dashboard {
+      display: none;
+      min-height: 100%;
+      padding: 120px 20px 60px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr 350px;
+      gap: 25px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .panel-3d {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 30px;
+      padding: 30px;
+      box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 25px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .input-3d {
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      color: white;
+      font-size: 14px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-3d:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 
+        inset 0 2px 5px rgba(0, 0, 0, 0.1),
+        0 0 0 3px rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .input-3d::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    select.input-3d {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      padding-right: 40px;
+    }
+
+    select.input-3d option {
+      background: #667eea;
+      color: white;
+    }
+
+    .toggle-3d {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 15px;
+    }
+
+    .toggle-3d:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .toggle-switch {
+      width: 50px;
+      height: 26px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 13px;
+      position: relative;
+      transition: all 0.3s ease;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch:after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-3d.active .toggle-switch {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .toggle-3d.active .toggle-switch:after {
+      left: 27px;
+    }
+
+    .toggle-label {
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    /* Student Cards */
+    .students-list {
+      max-height: 70vh;
+      overflow-y: auto;
+      padding-right: 10px;
+    }
+
+    .students-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .students-list::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .students-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+    }
+
+    .student-card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .student-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .student-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .student-info {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 5px;
+    }
+
+    .student-status {
+      display: inline-block;
+      padding: 5px 12px;
+      background: rgba(76, 217, 100, 0.3);
+      border: 1px solid rgba(76, 217, 100, 0.5);
+      border-radius: 20px;
+      font-size: 12px;
+      color: white;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    /* Map */
+    .map-container {
+      height: 400px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 25px;
+      box-shadow: inset 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .map-pin {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      animation: pulse 2s infinite;
+    }
+
+    .map-pin:hover {
+      transform: scale(1.2) translateY(-5px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(102, 126, 234, 0.7); }
+      50% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 15px rgba(102, 126, 234, 0); }
+    }
+
+    /* Chat */
+    .chat-container {
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .chat-message {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 12px 18px;
+      margin-bottom: 10px;
+      color: white;
+      font-size: 14px;
+      max-width: 85%;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .chat-input-container {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 25px;
+      color: white;
+      font-size: 14px;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .chat-input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .btn-send {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-send:hover {
+      transform: scale(1.1) rotate(15deg);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-send:active {
+      transform: scale(1.05) rotate(15deg);
+    }
+
+    /* Students Grid Page */
+    .students-page {
+      display: none;
+      padding: 120px 20px 60px;
+      min-height: 100%;
+    }
+
+    .search-bar-container {
+      max-width: 800px;
+      margin: 0 auto 40px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 18px 25px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50px;
+      color: white;
+      font-size: 16px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .search-bar:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .search-bar::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .students-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 25px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .student-card-large {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 25px;
+      padding: 30px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .student-card-large:hover {
+      transform: translateY(-10px) scale(1.03);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Map Page */
+    .map-page {
+      display: none;
+      padding: 120px 20px 60px;
+      min-height: 100%;
+    }
+
+    .map-layout {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 25px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .map-fullscreen {
+      height: 75vh;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 30px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Calendar Page */
+    .calendar-page {
+      display: none;
+      padding: 120px 20px 60px;
+      min-height: 100%;
+    }
+
+    .calendar-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 15px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 30px;
+      padding: 30px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 15px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .calendar-day:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Settings Page */
+    .settings-page {
+      display: none;
+      padding: 120px 20px 60px;
+      min-height: 100%;
+    }
+
+    .settings-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .settings-section {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 30px;
+      padding: 40px;
+      margin-bottom: 25px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .settings-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 25px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .setting-description {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    /* Footer */
+    footer {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 40px 20px;
+      text-align: center;
+      margin-top: 60px;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .social-icon {
+      width: 50px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      font-size: 20px;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .social-icon:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-5px) scale(1.1);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    }
+
+    .footer-credit {
+      color: white;
+      font-size: 14px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .footer-credit a {
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .footer-credit a:hover {
+      color: #f093fb;
+      text-shadow: 0 0 20px rgba(240, 147, 251, 0.6);
+    }
+
+    /* Group Study Page */
+    .group-study-page {
+      display: none;
+      padding: 120px 20px 60px;
+      min-height: 100%;
+    }
+
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 25px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .group-card {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 25px;
+      padding: 30px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .group-card:hover {
+      transform: translateY(-10px) scale(1.03);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .group-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 15px;
+    }
+
+    .group-members {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .group-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .icon-btn {
+      width: 45px;
+      height: 45px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-3px) scale(1.1);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Floating Add Button */
+    .fab {
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 32px;
+      cursor: pointer;
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fab:hover {
+      transform: scale(1.15) rotate(90deg);
+      box-shadow: 0 20px 50px rgba(102, 126, 234, 0.6);
+    }
+
+    .fab:active {
+      transform: scale(1.05) rotate(90deg);
+    }
+
+    /* Add Student Form */
+    .add-form-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .add-form {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 30px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 30px;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .btn-submit {
+      flex: 1;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 15px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Loading State */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 100px;
+      right: 30px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      padding: 18px 25px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+      z-index: 3000;
+      animation: slideInRight 0.4s ease-out;
+      display: none;
+    }
+
+    .toast.show {
+      display: block;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: white;
+    }
+
+    .empty-state-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+
+    .empty-state-text {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .empty-state-subtext {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .map-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        flex-wrap: wrap;
+        gap: 15px;
+        padding: 15px 20px;
+        top: 10px;
+      }
+
+      nav a {
+        font-size: 13px;
+        padding: 6px 12px;
+      }
+
+      .hero h1 {
+        font-size: 42px;
+      }
+
+      .hero p {
+        font-size: 16px;
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .btn-3d {
+        width: 100%;
+      }
+
+      .students-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .groups-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .calendar-grid {
+        gap: 8px;
+        padding: 20px;
+      }
+
+      .calendar-day {
+        font-size: 14px;
+        padding: 10px;
+      }
+
+      .fab {
+        width: 60px;
+        height: 60px;
+        bottom: 25px;
+        right: 25px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero {
+        padding: 120px 15px 60px;
+      }
+
+      .hero h1 {
+        font-size: 32px;
+      }
+
+      .panel-3d {
+        padding: 20px;
+      }
+
+      .add-form {
+        padding: 25px;
+      }
+
+      .toast {
+        right: 15px;
+        left: 15px;
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body><!-- 3D Background Shapes -->
+  <div class="bg-shapes">
+   <div class="shape"></div>
+   <div class="shape"></div>
+   <div class="shape"></div>
+   <div class="shape"></div>
+  </div><!-- Navigation -->
+  <nav id="nav"><a href="#" class="nav-link active" data-page="home">Home</a> <a href="#" class="nav-link" data-page="dashboard">Dashboard</a> <a href="#" class="nav-link" data-page="students">Students</a> <a href="#" class="nav-link" data-page="map">Map</a> <a href="#" class="nav-link" data-page="groups">Groups</a> <a href="#" class="nav-link" data-page="calendar">Calendar</a> <a href="#" class="nav-link" data-page="settings">Settings</a>
+  </nav><!-- Homepage Hero -->
+  <section class="hero" id="home-page">
+   <div class="container">
+    <h1 id="main-title">Study Cupboard System</h1>
+    <p id="hero-subtitle">Real-time student tracking, study rooms, and smart campus tools.</p>
+    <div class="cta-buttons"><button class="btn-3d btn-primary" id="primary-cta">Enter Dashboard</button> <button class="btn-3d btn-secondary" id="secondary-cta">Check In Now</button>
+    </div>
+   </div>
+  </section><!-- Dashboard Page -->
+  <section class="dashboard" id="dashboard-page">
+   <div class="dashboard-grid"><!-- Left Panel: Filters -->
+    <div class="panel-3d">
+     <h3 class="panel-title">Filters</h3><select class="input-3d" id="year-filter"> <option value="">Select Year</option> <option value="S1">S1</option> <option value="S2">S2</option> <option value="S3">S3</option> <option value="S4">S4</option> <option value="S5">S5</option> <option value="S6">S6</option> </select> <select class="input-3d" id="branch-filter"> <option value="">Select Branch</option> <option value="Bonch">Bonch</option> <option value="SMI">SMI</option> <option value="SIL">SIL</option> <option value="ESCP">ESCP</option> <option value="IGE">IGE</option> <option value="LEA">LEA</option> <option value="TEER">TEER</option> <option value="TGC">TGC</option> <option value="TCASI">TCASI</option> <option value="GPCA">GPCA</option> <option value="FTA">FTA</option> <option value="IAA">IAA</option> <option value="EME">EME</option> <option value="FAVA">FAVA</option> <option value="IAIL">IAIL</option> </select> <input type="text" class="input-3d" id="subject-filter" placeholder="Subject">
+     <div class="toggle-3d" id="cupboard-toggle">
+      <div class="toggle-switch"></div><span class="toggle-label">I am in the cupboard</span>
+     </div>
+    </div><!-- Center Panel: Students List -->
+    <div class="panel-3d">
+     <h3 class="panel-title">Active Students</h3>
+     <div class="students-list" id="students-list">
+      <div class="empty-state">
+       <div class="empty-state-icon">
+        📚
+       </div>
+       <div class="empty-state-text">
+        No students checked in yet
+       </div>
+       <div class="empty-state-subtext">
+        Click the + button to add your first check-in
+       </div>
+      </div>
+     </div>
+    </div><!-- Right Panel: Map & Chat -->
+    <div class="panel-3d">
+     <h3 class="panel-title">Campus Map</h3>
+     <div class="map-container" id="mini-map">
+      <div class="map-pin" style="top: 30%; left: 25%;" title="CAFI DANIA"></div>
+      <div class="map-pin" style="top: 60%; left: 65%;" title="UNIVERSITY LIBRARY"></div>
+     </div>
+     <h3 class="panel-title">Quick Chat</h3>
+     <div class="chat-container">
+      <div class="chat-messages" id="chat-messages">
+       <div class="chat-message">
+        Welcome to Study Cupboard! 👋
+       </div>
+      </div>
+      <div class="chat-input-container"><input type="text" class="chat-input" id="chat-input" placeholder="Type a message..."> <button class="btn-send" id="send-btn">➤</button>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section><!-- Students Page -->
+  <section class="students-page" id="students-page">
+   <div class="container">
+    <div class="search-bar-container"><input type="text" class="search-bar" id="search-students" placeholder="Search students by name, branch, or subject...">
+    </div>
+    <div class="students-grid" id="students-grid">
+     <div class="empty-state">
+      <div class="empty-state-icon">
+       👥
+      </div>
+      <div class="empty-state-text">
+       No students to display
+      </div>
+      <div class="empty-state-subtext">
+       Add students from the dashboard to see them here
+      </div>
+     </div>
+    </div>
+   </div>
+  </section><!-- Map Page -->
+  <section class="map-page" id="map-page">
+   <div class="container">
+    <div class="map-layout">
+     <div class="panel-3d">
+      <h3 class="panel-title">Locations</h3>
+      <div id="location-list" class="students-list">
+       <div class="empty-state">
+        <div class="empty-state-icon">
+         📍
+        </div>
+        <div class="empty-state-text">
+         No active locations
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="map-fullscreen" id="full-map">
+      <div class="map-pin" style="top: 25%; left: 20%;" title="CAFI DANIA"></div>
+      <div class="map-pin" style="top: 55%; left: 70%;" title="UNIVERSITY LIBRARY"></div>
+      <div class="map-pin" style="top: 70%; left: 35%;" title="Study Room A"></div>
+     </div>
+    </div>
+   </div>
+  </section><!-- Group Study Page -->
+  <section class="group-study-page" id="groups-page">
+   <div class="container">
+    <div class="groups-grid" id="groups-grid">
+     <div class="group-card">
+      <div class="group-title">
+       Mathematics Study Group
+      </div>
+      <div class="group-members">
+       👥 5 members • 📚 Calculus II
+      </div>
+      <div class="group-actions"><button class="btn-3d btn-primary" style="flex: 1;">Join Group</button>
+       <div class="icon-btn" title="Voice Call">
+        🎤
+       </div>
+       <div class="icon-btn" title="Video Call">
+        📹
+       </div>
+       <div class="icon-btn" title="Notes">
+        📝
+       </div>
+      </div>
+     </div>
+     <div class="group-card">
+      <div class="group-title">
+       Physics Lab Discussion
+      </div>
+      <div class="group-members">
+       👥 3 members • 📚 Quantum Physics
+      </div>
+      <div class="group-actions"><button class="btn-3d btn-primary" style="flex: 1;">Join Group</button>
+       <div class="icon-btn" title="Voice Call">
+        🎤
+       </div>
+       <div class="icon-btn" title="Video Call">
+        📹
+       </div>
+       <div class="icon-btn" title="Notes">
+        📝
+       </div>
+      </div>
+     </div>
+     <div class="group-card">
+      <div class="group-title">
+       Computer Science Project
+      </div>
+      <div class="group-members">
+       👥 7 members • 📚 Data Structures
+      </div>
+      <div class="group-actions"><button class="btn-3d btn-primary" style="flex: 1;">Join Group</button>
+       <div class="icon-btn" title="Voice Call">
+        🎤
+       </div>
+       <div class="icon-btn" title="Video Call">
+        📹
+       </div>
+       <div class="icon-btn" title="Notes">
+        📝
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section><!-- Calendar Page -->
+  <section class="calendar-page" id="calendar-page">
+   <div class="container">
+    <div class="calendar-container">
+     <div class="panel-3d">
+      <h3 class="panel-title" style="text-align: center; margin-bottom: 30px;">📅 Study Calendar - December 2024</h3>
+      <div class="calendar-grid">
+       <div class="calendar-day" style="opacity: 0.5;">
+        Sun
+       </div>
+       <div class="calendar-day" style="opacity: 0.5;">
+        Mon
+       </div>
+       <div class="calendar-day" style="opacity: 0.5;">
+        Tue
+       </div>
+       <div class="calendar-day" style="opacity: 0.5;">
+        Wed
+       </div>
+       <div class="calendar-day" style="opacity: 0.5;">
+        Thu
+       </div>
+       <div class="calendar-day" style="opacity: 0.5;">
+        Fri
+       </div>
+       <div class="calendar-day" style="opacity: 0.5;">
+        Sat
+       </div>
+       <div class="calendar-day">
+        1
+       </div>
+       <div class="calendar-day">
+        2
+       </div>
+       <div class="calendar-day">
+        3
+       </div>
+       <div class="calendar-day">
+        4
+       </div>
+       <div class="calendar-day">
+        5
+       </div>
+       <div class="calendar-day">
+        6
+       </div>
+       <div class="calendar-day">
+        7
+       </div>
+       <div class="calendar-day">
+        8
+       </div>
+       <div class="calendar-day">
+        9
+       </div>
+       <div class="calendar-day">
+        10
+       </div>
+       <div class="calendar-day">
+        11
+       </div>
+       <div class="calendar-day">
+        12
+       </div>
+       <div class="calendar-day">
+        13
+       </div>
+       <div class="calendar-day">
+        14
+       </div>
+       <div class="calendar-day">
+        15
+       </div>
+       <div class="calendar-day">
+        16
+       </div>
+       <div class="calendar-day">
+        17
+       </div>
+       <div class="calendar-day">
+        18
+       </div>
+       <div class="calendar-day">
+        19
+       </div>
+       <div class="calendar-day">
+        20
+       </div>
+       <div class="calendar-day">
+        21
+       </div>
+       <div class="calendar-day">
+        22
+       </div>
+       <div class="calendar-day">
+        23
+       </div>
+       <div class="calendar-day">
+        24
+       </div>
+       <div class="calendar-day">
+        25
+       </div>
+       <div class="calendar-day">
+        26
+       </div>
+       <div class="calendar-day">
+        27
+       </div>
+       <div class="calendar-day">
+        28
+       </div>
+       <div class="calendar-day">
+        29
+       </div>
+       <div class="calendar-day">
+        30
+       </div>
+       <div class="calendar-day">
+        31
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section><!-- Settings Page -->
+  <section class="settings-page" id="settings-page">
+   <div class="container">
+    <div class="settings-container">
+     <div class="settings-section">
+      <h3 class="settings-title">Account Settings</h3>
+      <div class="setting-item">
+       <div>
+        <div class="setting-label">
+         Profile Visibility
+        </div>
+        <div class="setting-description">
+         Control who can see your profile
+        </div>
+       </div>
+       <div class="toggle-3d">
+        <div class="toggle-switch"></div>
+       </div>
+      </div>
+      <div class="setting-item">
+       <div>
+        <div class="setting-label">
+         Auto Check-In
+        </div>
+        <div class="setting-description">
+         Automatically check in when entering campus
+        </div>
+       </div>
+       <div class="toggle-3d active">
+        <div class="toggle-switch"></div>
+       </div>
+      </div>
+     </div>
+     <div class="settings-section">
+      <h3 class="settings-title">Notifications</h3>
+      <div class="setting-item">
+       <div>
+        <div class="setting-label">
+         Study Group Invites
+        </div>
+        <div class="setting-description">
+         Get notified when invited to groups
+        </div>
+       </div>
+       <div class="toggle-3d active">
+        <div class="toggle-switch"></div>
+       </div>
+      </div>
+      <div class="setting-item">
+       <div>
+        <div class="setting-label">
+         Chat Messages
+        </div>
+        <div class="setting-description">
+         Receive notifications for new messages
+        </div>
+       </div>
+       <div class="toggle-3d active">
+        <div class="toggle-switch"></div>
+       </div>
+      </div>
+     </div>
+     <div class="settings-section">
+      <h3 class="settings-title">Appearance</h3>
+      <div class="setting-item">
+       <div>
+        <div class="setting-label">
+         Dark Mode
+        </div>
+        <div class="setting-description">
+         Switch to dark theme with neon accents
+        </div>
+       </div>
+       <div class="toggle-3d">
+        <div class="toggle-switch"></div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </section><!-- Footer -->
+  <footer>
+   <div class="footer-content">
+    <div class="social-links"><a href="#" class="social-icon" title="Facebook">📘</a> <a href="#" class="social-icon" title="Twitter">🐦</a> <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="social-icon" title="Instagram">📷</a> <a href="#" class="social-icon" title="LinkedIn">💼</a>
+    </div>
+    <div class="footer-credit"><span id="footer-credit">By Mr. Smail Ighiden</span> | <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Follow on Instagram</a>
+    </div>
+   </div>
+  </footer><!-- Floating Action Button --> <button class="fab" id="fab" title="Add Check-In">+</button> <!-- Add Student Form -->
+  <div class="add-form-container" id="add-form-container">
+   <form class="add-form" id="add-student-form">
+    <h3 class="form-title">Check In</h3><input type="text" class="input-3d" id="student-name" placeholder="Full Name" required> <select class="input-3d" id="student-level" required> <option value="">Select Year</option> <option value="S1">S1</option> <option value="S2">S2</option> <option value="S3">S3</option> <option value="S4">S4</option> <option value="S5">S5</option> <option value="S6">S6</option> </select> <select class="input-3d" id="student-branch" required> <option value="">Select Branch</option> <option value="Bonch">Bonch</option> <option value="SMI">SMI</option> <option value="SIL">SIL</option> <option value="ESCP">ESCP</option> <option value="IGE">IGE</option> <option value="LEA">LEA</option> <option value="TEER">TEER</option> <option value="TGC">TGC</option> <option value="TCASI">TCASI</option> <option value="GPCA">GPCA</option> <option value="FTA">FTA</option> <option value="IAA">IAA</option> <option value="EME">EME</option> <option value="FAVA">FAVA</option> <option value="IAIL">IAIL</option> </select> <input type="text" class="input-3d" id="student-subject" placeholder="Subject" required> <select class="input-3d" id="student-location" required> <option value="">Select Location</option> <option value="CAFI DANIA">CAFI DANIA</option> <option value="UNIVERSITY LIBRARY">UNIVERSITY LIBRARY</option> <option value="Study Room A">Study Room A</option> <option value="Cupboard">Cupboard</option> </select>
+    <div class="form-buttons"><button type="button" class="btn-cancel" id="cancel-btn">Cancel</button> <button type="submit" class="btn-submit" id="submit-btn">Check In</button>
+    </div>
+   </form>
+  </div><!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+  <script>
+    const defaultConfig = {
+      main_title: "Study Cupboard System",
+      hero_subtitle: "Real-time student tracking, study rooms, and smart campus tools.",
+      primary_cta: "Enter Dashboard",
+      secondary_cta: "Check In Now",
+      footer_credit: "By Mr. Smail Ighiden",
+      background_color: "#667eea",
+      surface_color: "#ffffff",
+      text_color: "#ffffff",
+      primary_action_color: "#764ba2",
+      secondary_action_color: "#f093fb"
+    };
+
+    let allStudents = [];
+    let filteredStudents = [];
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allStudents = data;
+        applyFilters();
+        updateAllViews();
+      }
+    };
+
+    async function initApp() {
+      if (window.elementSdk) {
+        await window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (config) => {
+            document.getElementById('main-title').textContent = config.main_title || defaultConfig.main_title;
+            document.getElementById('hero-subtitle').textContent = config.hero_subtitle || defaultConfig.hero_subtitle;
+            document.getElementById('primary-cta').textContent = config.primary_cta || defaultConfig.primary_cta;
+            document.getElementById('secondary-cta').textContent = config.secondary_cta || defaultConfig.secondary_cta;
+            document.getElementById('footer-credit').textContent = config.footer_credit || defaultConfig.footer_credit;
+
+            const bgColor = config.background_color || defaultConfig.background_color;
+            const surfaceColor = config.surface_color || defaultConfig.surface_color;
+            const textColor = config.text_color || defaultConfig.text_color;
+            const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+            const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+
+            document.body.style.background = `linear-gradient(135deg, ${bgColor} 0%, ${primaryColor} 50%, ${secondaryColor} 100%)`;
+            
+            document.querySelectorAll('.btn-primary').forEach(btn => {
+              btn.style.background = `linear-gradient(135deg, ${bgColor} 0%, ${primaryColor} 100%)`;
+            });
+
+            document.querySelectorAll('.btn-secondary').forEach(btn => {
+              btn.style.background = surfaceColor;
+              btn.style.color = bgColor;
+            });
+          },
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              {
+                get: () => config.background_color || defaultConfig.background_color,
+                set: (value) => {
+                  if (window.elementSdk) {
+                    window.elementSdk.setConfig({ background_color: value });
+                  }
+                }
+              },
+              {
+                get: () => config.surface_color || defaultConfig.surface_color,
+                set: (value) => {
+                  if (window.elementSdk) {
+                    window.elementSdk.setConfig({ surface_color: value });
+                  }
+                }
+              },
+              {
+                get: () => config.text_color || defaultConfig.text_color,
+                set: (value) => {
+                  if (window.elementSdk) {
+                    window.elementSdk.setConfig({ text_color: value });
+                  }
+                }
+              },
+              {
+                get: () => config.primary_action_color || defaultConfig.primary_action_color,
+                set: (value) => {
+                  if (window.elementSdk) {
+                    window.elementSdk.setConfig({ primary_action_color: value });
+                  }
+                }
+              },
+              {
+                get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+                set: (value) => {
+                  if (window.elementSdk) {
+                    window.elementSdk.setConfig({ secondary_action_color: value });
+                  }
+                }
+              }
+            ],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ["main_title", config.main_title || defaultConfig.main_title],
+            ["hero_subtitle", config.hero_subtitle || defaultConfig.hero_subtitle],
+            ["primary_cta", config.primary_cta || defaultConfig.primary_cta],
+            ["secondary_cta", config.secondary_cta || defaultConfig.secondary_cta],
+            ["footer_credit", config.footer_credit || defaultConfig.footer_credit]
+          ])
+        });
+      }
+
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error("Failed to initialize data SDK");
+        }
+      }
+    }
+
+    function applyFilters() {
+      const yearFilter = document.getElementById('year-filter').value;
+      const branchFilter = document.getElementById('branch-filter').value;
+      const subjectFilter = document.getElementById('subject-filter').value.toLowerCase();
+      const searchTerm = document.getElementById('search-students')?.value.toLowerCase() || '';
+
+      filteredStudents = allStudents.filter(student => {
+        const matchesYear = !yearFilter || student.level === yearFilter;
+        const matchesBranch = !branchFilter || student.branch === branchFilter;
+        const matchesSubject = !subjectFilter || student.subject.toLowerCase().includes(subjectFilter);
+        const matchesSearch = !searchTerm || 
+          student.name.toLowerCase().includes(searchTerm) ||
+          student.branch.toLowerCase().includes(searchTerm) ||
+          student.subject.toLowerCase().includes(searchTerm);
+
+        return matchesYear && matchesBranch && matchesSubject && matchesSearch;
+      });
+    }
+
+    function updateAllViews() {
+      updateStudentsList();
+      updateStudentsGrid();
+      updateLocationsList();
+    }
+
+    function updateStudentsList() {
+      const container = document.getElementById('students-list');
+      
+      if (filteredStudents.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <div class="empty-state-text">No students match your filters</div>
+            <div class="empty-state-subtext">Try adjusting your filters or add new check-ins</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filteredStudents.map(student => `
+        <div class="student-card">
+          <div class="student-name">${student.name}</div>
+          <div class="student-info">📚 ${student.level} - ${student.branch}</div>
+          <div class="student-info">📖 ${student.subject}</div>
+          <div class="student-info">📍 ${student.location}</div>
+          <div class="student-info">🕐 ${student.checkin_time}</div>
+          <span class="student-status">${student.status}</span>
+        </div>
+      `).join('');
+    }
+
+    function updateStudentsGrid() {
+      const container = document.getElementById('students-grid');
+      
+      if (allStudents.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">👥</div>
+            <div class="empty-state-text">No students to display</div>
+            <div class="empty-state-subtext">Add students from the dashboard to see them here</div>
+          </div>
+        `;
+        return;
+      }
+
+      const displayStudents = filteredStudents.length > 0 ? filteredStudents : allStudents;
+      
+      container.innerHTML = displayStudents.map(student => `
+        <div class="student-card-large">
+          <div class="student-name">${student.name}</div>
+          <div class="student-info">📚 ${student.level} - ${student.branch}</div>
+          <div class="student-info">📖 ${student.subject}</div>
+          <div class="student-info">📍 ${student.location}</div>
+          <div class="student-info">🕐 ${student.checkin_time}</div>
+          <span class="student-status">${student.status}</span>
+        </div>
+      `).join('');
+    }
+
+    function updateLocationsList() {
+      const container = document.getElementById('location-list');
+      
+      if (allStudents.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📍</div>
+            <div class="empty-state-text">No active locations</div>
+          </div>
+        `;
+        return;
+      }
+
+      const locationGroups = {};
+      allStudents.forEach(student => {
+        if (!locationGroups[student.location]) {
+          locationGroups[student.location] = [];
+        }
+        locationGroups[student.location].push(student);
+      });
+
+      container.innerHTML = Object.entries(locationGroups).map(([location, students]) => `
+        <div class="student-card">
+          <div class="student-name">📍 ${location}</div>
+          <div class="student-info">${students.length} student${students.length !== 1 ? 's' : ''}</div>
+          ${students.map(s => `<div class="student-info">• ${s.name}</div>`).join('')}
+        </div>
+      `).join('');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = link.getAttribute('data-page');
+        
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        document.querySelectorAll('section').forEach(section => {
+          section.style.display = 'none';
+        });
+
+        if (page === 'home') {
+          document.getElementById('home-page').style.display = 'block';
+        } else if (page === 'dashboard') {
+          document.getElementById('dashboard-page').style.display = 'block';
+        } else if (page === 'students') {
+          document.getElementById('students-page').style.display = 'block';
+        } else if (page === 'map') {
+          document.getElementById('map-page').style.display = 'block';
+        } else if (page === 'groups') {
+          document.getElementById('groups-page').style.display = 'block';
+        } else if (page === 'calendar') {
+          document.getElementById('calendar-page').style.display = 'block';
+        } else if (page === 'settings') {
+          document.getElementById('settings-page').style.display = 'block';
+        }
+      });
+    });
+
+    document.getElementById('primary-cta').addEventListener('click', () => {
+      document.querySelector('[data-page="dashboard"]').click();
+    });
+
+    document.getElementById('secondary-cta').addEventListener('click', () => {
+      document.getElementById('add-form-container').style.display = 'flex';
+    });
+
+    document.getElementById('fab').addEventListener('click', () => {
+      document.getElementById('add-form-container').style.display = 'flex';
+    });
+
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      document.getElementById('add-form-container').style.display = 'none';
+      document.getElementById('add-student-form').reset();
+    });
+
+    document.getElementById('add-student-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (allStudents.length >= 999) {
+        showToast('⚠️ Maximum limit of 999 students reached. Please remove some entries first.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Checking In...';
+
+      const name = document.getElementById('student-name').value;
+      const level = document.getElementById('student-level').value;
+      const branch = document.getElementById('student-branch').value;
+      const subject = document.getElementById('student-subject').value;
+      const location = document.getElementById('student-location').value;
+
+      const newStudent = {
+        id: Date.now().toString(),
+        name,
+        level,
+        branch,
+        subject,
+        location,
+        status: 'Studying',
+        checkin_time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      if (window.dataSdk) {
+        const result = await window.dataSdk.create(newStudent);
+        if (result.isOk) {
+          showToast('✅ Successfully checked in!');
+          document.getElementById('add-form-container').style.display = 'none';
+          document.getElementById('add-student-form').reset();
+        } else {
+          showToast('❌ Failed to check in. Please try again.');
+        }
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Check In';
+    });
+
+    document.getElementById('cupboard-toggle').addEventListener('click', (e) => {
+      e.currentTarget.classList.toggle('active');
+    });
+
+    document.querySelectorAll('.toggle-3d').forEach(toggle => {
+      toggle.addEventListener('click', (e) => {
+        if (e.currentTarget.id !== 'cupboard-toggle') {
+          e.currentTarget.classList.toggle('active');
+        }
+      });
+    });
+
+    document.getElementById('year-filter').addEventListener('change', () => {
+      applyFilters();
+      updateAllViews();
+    });
+
+    document.getElementById('branch-filter').addEventListener('change', () => {
+      applyFilters();
+      updateAllViews();
+    });
+
+    document.getElementById('subject-filter').addEventListener('input', () => {
+      applyFilters();
+      updateAllViews();
+    });
+
+    document.getElementById('search-students').addEventListener('input', () => {
+      applyFilters();
+      updateAllViews();
+    });
+
+    document.getElementById('send-btn').addEventListener('click', () => {
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      
+      if (message) {
+        const messagesContainer = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message';
+        messageDiv.textContent = message;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        input.value = '';
+      }
+    });
+
+    document.getElementById('chat-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('send-btn').click();
+      }
+    });
+
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a1d2daf234ce201',t:'MTc2MzY5NjU2MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

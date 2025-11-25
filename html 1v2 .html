@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyVerse | Immersive Coordination</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --secondary: #bd00ff;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-hover: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.15);
+            --text: #ffffff;
+            --dark-bg: #050510;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text);
+            overflow: hidden; /* Prevent scroll, purely app-like */
+        }
+
+        /* --- 3D Canvas Layer --- */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+            opacity: 0; /* Fades in on load */
+            transition: opacity 1.5s ease;
+        }
+
+        /* --- UI Overlay Layer --- */
+        #ui-layer {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100vh;
+            pointer-events: none; /* Let clicks pass through to canvas where needed */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Common Glassmorphism Class */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            pointer-events: auto;
+        }
+
+        /* --- Navigation --- */
+        nav {
+            padding: 2rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* --- View Containers --- */
+        .view-section {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 1200px;
+            padding: 2rem;
+            display: none; /* Toggled via JS */
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .view-section.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* --- Homepage View --- */
+        #home-view {
+            flex-direction: column;
+            align-items: center; /* Center alignment */
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 5rem;
+            line-height: 1;
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+        }
+        
+        h1 span {
+            font-weight: 700;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+        }
+
+        p.subtitle {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.7);
+            max-width: 600px;
+            margin-bottom: 3rem;
+        }
+
+        .cta-button {
+            padding: 18px 40px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark-bg);
+            background: var(--primary);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            pointer-events: auto;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .cta-button:hover {
+            background: white;
+            box-shadow: 0 0 30px var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .cta-button.secondary {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .cta-button.secondary:hover {
+            background: var(--primary);
+            color: var(--dark-bg);
+        }
+
+        /* --- Dashboard View (The Grid) --- */
+        #dashboard-view {
+            justify-content: space-between;
+            align-items: stretch;
+            height: 70vh;
+            gap: 2rem;
+        }
+
+        .dashboard-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stats-card {
+            padding: 1.5rem;
+            flex: 0 0 auto;
+        }
+
+        .stats-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .student-list-container {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .list-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        /* Scrollbar styling */
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .scroll-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .student-card {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .student-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--primary);
+            transform: translateX(10px);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            margin-right: 15px;
+        }
+
+        .student-info h4 { font-weight: 600; margin-bottom: 2px; }
+        .student-info p { font-size: 0.8rem; color: #aaa; }
+        .time-tag { margin-left: auto; font-size: 0.75rem; color: var(--primary); border: 1px solid var(--primary); padding: 4px 8px; border-radius: 4px; }
+
+        /* --- Login / Input Modal --- */
+        #login-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        #login-modal.open { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            width: 400px;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; }
+
+        /* --- Footer --- */
+        .ui-footer {
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        /* --- Utility --- */
+        .hidden { display: none !important; }
+        
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            h1 { font-size: 3rem; }
+            #dashboard-view { flex-direction: column; height: auto; padding-top: 100px;}
+            .dashboard-col { width: 100%; }
+        }
+        
+        /* AI Feature Styles */
+        .ai-loading {
+            animation: pulse 1.5s infinite;
+            color: var(--primary);
+            font-style: italic;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .ai-result {
+            margin-top: 15px;
+            text-align: left;
+            background: rgba(0, 242, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid var(--primary);
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .ai-result ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .ai-result li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .ai-result li:before {
+            content: "✦";
+            color: var(--primary);
+            margin-right: 8px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 3D Scene Container -->
+    <div id="canvas-container"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+        
+        <!-- Navbar -->
+        <nav id="navbar">
+            <div class="logo">Study<span style="color:white;">Verse</span></div>
+            <div class="user-pill glass-panel hidden" id="user-status">
+                <div class="status-dot"></div>
+                <span id="username-display">Guest</span>
+            </div>
+            <div id="auth-buttons">
+                <button class="cta-button" style="padding: 10px 24px; font-size: 0.8rem;" onclick="app.openLogin()">Login</button>
+            </div>
+        </nav>
+
+        <!-- View: Home -->
+        <section id="home-view" class="view-section active">
+            <h1>Coordinated<br><span>Deep Work</span></h1>
+            <p class="subtitle">Join the virtual library. synchronize your focus with others in a cinematic 3D environment.</p>
+            <button class="cta-button" onclick="app.enterLibrary()">Enter Library</button>
+        </section>
+
+        <!-- View: Dashboard -->
+        <section id="dashboard-view" class="view-section">
+            
+            <!-- Left Column: AI & Status -->
+            <div class="dashboard-col" style="flex: 0.45;">
+                
+                <!-- Status Card -->
+                <div class="glass-panel stats-card" style="text-align:center;">
+                    <h3>Your Session</h3>
+                    <p id="session-status-text" style="margin: 10px 0 20px 0; color: #aaa;">Mark your presence to join the visualization.</p>
+                    <button id="mark-presence-btn" class="cta-button" onclick="app.togglePresence()">Check In</button>
+                </div>
+
+                <!-- AI Assistant Card -->
+                <div class="glass-panel stats-card">
+                    <h3>✨ AI Study Assistant</h3>
+                    <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 15px;">Get a breakdown for your session.</p>
+                    
+                    <div style="display:flex; gap: 10px;">
+                         <input type="text" id="ai-subject-input" placeholder="Specific topic (e.g. Integrals)" style="font-size: 0.9rem; padding: 10px;">
+                    </div>
+                    
+                    <button class="cta-button secondary" style="width:100%; margin-top: 10px; font-size: 0.9rem; padding: 10px;" onclick="app.generateStudyPlan()">
+                        ✨ Optimize Session
+                    </button>
+                    
+                    <div id="ai-loading-indicator" class="ai-loading hidden">Connectng to Gemini Neural Net...</div>
+                    <div id="ai-plan-result" class="ai-result"></div>
+                </div>
+
+                <div class="glass-panel stats-card" style="padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.8rem; color: #aaa;">Library Population</div>
+                    <span class="stats-number" id="active-count" style="font-size: 2rem;">0</span>
+                </div>
+            </div>
+
+            <!-- Right Column: Student List -->
+            <div class="dashboard-col">
+                <div class="glass-panel student-list-container">
+                    <div class="list-header">
+                        <h3>Active Students</h3>
+                        <div style="font-size: 0.8rem; color: var(--primary);">Live Feed</div>
+                    </div>
+                    <div class="scroll-area" id="student-list">
+                        <!-- Student cards injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <div class="ui-footer">
+            StudyVerse &copy; 2024 • Three.js WebGL System • Powered by Gemini API
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal">
+        <div class="glass-panel modal-content">
+            <h2 style="margin-bottom: 20px;">Identity Access</h2>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="login-username" placeholder="Enter your handle">
+            </div>
+            <div class="input-group">
+                <label>Subject Focus</label>
+                <input type="text" id="login-subject" placeholder="e.g. Calculus, Design">
+            </div>
+            <button class="cta-button" style="width:100%" onclick="app.login()">Initialize</button>
+            <p style="margin-top: 15px; font-size: 0.8rem; cursor: pointer; color: #aaa;" onclick="app.closeLogin()">Cancel</p>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; // Set by environment
+
+        /**
+         * StudyVerse Application Logic
+         * Handles 3D Rendering (Three.js) & App State (Vanilla JS)
+         */
+
+        class StudyVerseApp {
+            constructor() {
+                // State
+                this.user = null;
+                this.isPresent = false;
+                this.students = [
+                    { name: "Sarah J.", subject: "Architecture", time: "2h 10m" },
+                    { name: "David L.", subject: "Computer Science", time: "45m" },
+                    { name: "Maya P.", subject: "Medicine", time: "1h 30m" },
+                    { name: "James K.", subject: "History", time: "15m" },
+                    { name: "Elena R.", subject: "Physics", time: "3h 05m" },
+                    { name: "Omar F.", subject: "Literature", time: "1h 10m" }
+                ];
+
+                // Three.js Components
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.particles = null;
+                this.geometryObj = null;
+                
+                // Interaction
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.targetX = 0;
+                this.targetY = 0;
+
+                this.init();
+            }
+
+            init() {
+                this.initThree();
+                this.initUI();
+                this.animate();
+                this.renderStudentList();
+                this.updateCount();
+            }
+
+            // --- 3D ENGINE SETUP ---
+            initThree() {
+                const container = document.getElementById('canvas-container');
+                
+                // Scene
+                this.scene = new THREE.Scene();
+                // Fog for depth
+                this.scene.fog = new THREE.FogExp2(0x050510, 0.002);
+
+                // Camera
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.z = 30; // Initial Zoom
+
+                // Renderer
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(this.renderer.domElement);
+
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                this.scene.add(ambientLight);
+
+                const pointLight1 = new THREE.PointLight(0x00f2ff, 2, 50); // Cyan
+                pointLight1.position.set(10, 10, 10);
+                this.scene.add(pointLight1);
+
+                const pointLight2 = new THREE.PointLight(0xbd00ff, 2, 50); // Purple
+                pointLight2.position.set(-10, -10, 10);
+                this.scene.add(pointLight2);
+
+                // Objects: Abstract Connected Network (Icosahedron)
+                const geometry = new THREE.IcosahedronGeometry(10, 1);
+                const wireframe = new THREE.WireframeGeometry(geometry);
+                
+                // Material for the lines
+                const material = new THREE.LineBasicMaterial({ 
+                    color: 0x4444ff, 
+                    transparent: true, 
+                    opacity: 0.3 
+                });
+
+                this.geometryObj = new THREE.LineSegments(wireframe, material);
+                this.scene.add(this.geometryObj);
+
+                // Add Particles (Stars/Data points)
+                const particlesGeometry = new THREE.BufferGeometry();
+                const particlesCount = 700;
+                const posArray = new Float32Array(particlesCount * 3);
+
+                for(let i = 0; i < particlesCount * 3; i++) {
+                    posArray[i] = (Math.random() - 0.5) * 100; // Spread logic
+                }
+
+                particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                const particlesMaterial = new THREE.PointsMaterial({
+                    size: 0.15,
+                    color: 0x00f2ff,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+
+                this.particles = new THREE.Points(particlesGeometry, particlesMaterial);
+                this.scene.add(this.particles);
+
+                // Initial Reveal Animation
+                container.style.opacity = '1';
+                
+                // Event Listeners
+                window.addEventListener('resize', () => this.onWindowResize());
+                document.addEventListener('mousemove', (e) => this.onMouseMove(e));
+            }
+
+            // --- ANIMATION LOOP ---
+            animate() {
+                requestAnimationFrame(() => this.animate());
+
+                // Smooth Mouse Parallax
+                this.targetX = this.mouseX * 0.001;
+                this.targetY = this.mouseY * 0.001;
+
+                // Rotate Object
+                if (this.geometryObj) {
+                    this.geometryObj.rotation.x += 0.001;
+                    this.geometryObj.rotation.y += 0.0015;
+                    // Gentle breathing effect
+                    const scale = 1 + Math.sin(Date.now() * 0.001) * 0.05;
+                    this.geometryObj.scale.set(scale, scale, scale);
+                }
+
+                // Rotate Particles slowly
+                if (this.particles) {
+                    this.particles.rotation.y -= 0.0005;
+                }
+
+                // Camera Movement Smoothing
+                this.camera.rotation.x += 0.05 * (this.targetY - this.camera.rotation.x);
+                this.camera.rotation.y += 0.05 * (this.targetX - this.camera.rotation.y);
+
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            // --- EVENTS ---
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            onMouseMove(event) {
+                this.mouseX = event.clientX - window.innerWidth / 2;
+                this.mouseY = event.clientY - window.innerHeight / 2;
+            }
+
+            // --- UI LOGIC ---
+            initUI() {
+                // Animate Navbar in
+                gsap.to("nav", { opacity: 1, y: 0, duration: 1, delay: 0.5, ease: "power3.out" });
+            }
+
+            enterLibrary() {
+                // 1. Check if logged in (Mock: Just proceed if guest)
+                // 2. Transition Camera using GSAP
+                gsap.to(this.camera.position, {
+                    z: 15, // Zoom in
+                    x: -5, // Pan left to make room for UI on right
+                    duration: 2,
+                    ease: "power3.inOut"
+                });
+
+                // 3. Transition UI
+                this.switchView('dashboard-view');
+            }
+
+            switchView(viewId) {
+                // Hide all views
+                document.querySelectorAll('.view-section').forEach(el => {
+                    el.classList.remove('active');
+                    setTimeout(() => {
+                        if(!el.classList.contains('active')) el.style.display = 'none';
+                    }, 500); // Wait for opacity transition
+                });
+
+                // Show new view
+                const newView = document.getElementById(viewId);
+                newView.style.display = 'flex';
+                // Small delay to allow display:flex to apply before opacity fade-in
+                setTimeout(() => {
+                    newView.classList.add('active');
+                    
+                    // Stagger animation for dashboard elements
+                    if(viewId === 'dashboard-view') {
+                        gsap.from(".dashboard-col", {
+                            y: 30,
+                            opacity: 0,
+                            duration: 0.8,
+                            stagger: 0.2,
+                            ease: "power3.out",
+                            delay: 0.2
+                        });
+                    }
+                }, 50);
+            }
+
+            renderStudentList() {
+                const list = document.getElementById('student-list');
+                list.innerHTML = '';
+                
+                this.students.forEach((student, index) => {
+                    const initials = student.name.split(' ').map(n => n[0]).join('');
+                    const html = `
+                        <div class="student-card" style="animation: fadeSlideIn 0.5s ease forwards ${index * 0.1}s">
+                            <div class="avatar">${initials}</div>
+                            <div class="student-info">
+                                <h4>${student.name}</h4>
+                                <p>${student.subject}</p>
+                            </div>
+                            <div class="time-tag">${student.time}</div>
+                        </div>
+                    `;
+                    list.innerHTML += html;
+                });
+            }
+
+            updateCount() {
+                const countEl = document.getElementById('active-count');
+                // Animate number count up
+                const target = this.students.length;
+                let current = 0;
+                const timer = setInterval(() => {
+                    current++;
+                    countEl.innerText = current;
+                    if(current >= target) clearInterval(timer);
+                }, 100);
+            }
+
+            // --- AUTH & PRESENCE ---
+            openLogin() {
+                document.getElementById('login-modal').classList.add('open');
+            }
+
+            closeLogin() {
+                document.getElementById('login-modal').classList.remove('open');
+            }
+
+            login() {
+                const username = document.getElementById('login-username').value;
+                const subject = document.getElementById('login-subject').value;
+
+                if(!username) return;
+
+                this.user = { name: username, subject: subject || "General Study" };
+                
+                // Update UI
+                this.closeLogin();
+                document.getElementById('auth-buttons').classList.add('hidden');
+                document.getElementById('user-status').classList.remove('hidden');
+                document.getElementById('username-display').innerText = this.user.name;
+                
+                // Update AI Input if empty
+                const aiInput = document.getElementById('ai-subject-input');
+                if(!aiInput.value) aiInput.value = this.user.subject;
+
+                // Move to library automatically
+                this.enterLibrary();
+            }
+
+            togglePresence() {
+                if(!this.user) {
+                    this.openLogin();
+                    return;
+                }
+
+                const btn = document.getElementById('mark-presence-btn');
+                const statusText = document.getElementById('session-status-text');
+                
+                if(!this.isPresent) {
+                    // Check In
+                    this.isPresent = true;
+                    btn.innerText = "Check Out";
+                    btn.style.background = "var(--secondary)";
+                    btn.style.color = "white";
+                    statusText.innerText = `Focus Mode: ON`;
+                    statusText.style.color = "var(--primary)";
+                    
+                    // Add user to list visually
+                    this.students.unshift({
+                        name: this.user.name,
+                        subject: this.user.subject,
+                        time: "Just now"
+                    });
+                    this.renderStudentList();
+                    this.updateCount();
+
+                    // Camera effect: Slight shake/zoom punch
+                    gsap.to(this.camera.position, { z: 14, duration: 0.1, yoyo: true, repeat: 1 });
+
+                } else {
+                    // Check Out
+                    this.isPresent = false;
+                    btn.innerText = "Check In";
+                    btn.style.background = "var(--primary)";
+                    btn.style.color = "var(--dark-bg)";
+                    statusText.innerText = "Mark your presence to join the visualization.";
+                    statusText.style.color = "#aaa";
+                    
+                    // Remove first element (user)
+                    this.students.shift();
+                    this.renderStudentList();
+                    this.updateCount();
+                }
+            }
+            
+            // --- GEMINI API INTEGRATION ---
+            
+            async callGeminiAPI(userPrompt) {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{
+                        parts: [{ text: userPrompt }]
+                    }]
+                };
+
+                const delays = [1000, 2000, 4000];
+                
+                for (let i = 0; i <= delays.length; i++) {
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            if (response.status === 429 && i < delays.length) {
+                                await new Promise(r => setTimeout(r, delays[i]));
+                                continue;
+                            }
+                            throw new Error(`API Error: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        return data.candidates[0].content.parts[0].text;
+                    } catch (error) {
+                        if (i === delays.length) throw error;
+                    }
+                }
+            }
+
+            async generateStudyPlan() {
+                const inputEl = document.getElementById('ai-subject-input');
+                const resultEl = document.getElementById('ai-plan-result');
+                const loadingEl = document.getElementById('ai-loading-indicator');
+                
+                let topic = inputEl.value;
+                if (!topic) {
+                    if (this.user && this.user.subject) {
+                        topic = this.user.subject;
+                    } else {
+                        alert("Please enter a topic first.");
+                        return;
+                    }
+                }
+
+                // UI Loading State
+                loadingEl.classList.remove('hidden');
+                resultEl.style.display = 'none';
+                
+                const prompt = `
+                    I am about to start a 1-hour deep work study session.
+                    The topic is: "${topic}".
+                    Please generate a concise 3-step actionable study plan (checklist).
+                    Each step should be brief (under 10 words).
+                    Return ONLY the 3 bullet points, nothing else. No intro/outro.
+                `;
+
+                try {
+                    const responseText = await this.callGeminiAPI(prompt);
+                    
+                    // Process text to remove asterisks or dashes if the model adds them
+                    const steps = responseText.split('\n').filter(line => line.trim().length > 0);
+                    
+                    let html = '<ul>';
+                    steps.forEach(step => {
+                        const cleanStep = step.replace(/^[\*\-\d\.]+\s*/, '');
+                        html += `<li>${cleanStep}</li>`;
+                    });
+                    html += '</ul>';
+                    
+                    resultEl.innerHTML = `<strong>Plan for ${topic}:</strong>` + html;
+                    resultEl.style.display = 'block';
+                    
+                } catch (error) {
+                    console.error(error);
+                    resultEl.innerHTML = `<span style="color: #ff4444;">AI unavailable. Try again later.</span>`;
+                    resultEl.style.display = 'block';
+                } finally {
+                    loadingEl.classList.add('hidden');
+                }
+            }
+        }
+
+        // Initialize App when DOM is ready
+        window.addEventListener('DOMContentLoaded', () => {
+            window.app = new StudyVerseApp();
+        });
+
+    </script>
+</body>
+</html>
